@@ -4,11 +4,13 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { jwtConstants } from 'src/common/constants/token.constants';
 import { randomUUID } from 'crypto';
+import { Role } from 'src/common/decorators/roles.decorator';
 
 interface JwtPayload {
   sub: string;
   email: string;
   fullName: string;
+  role: Role;
   jti: string;
   type: 'access' | 'refresh';
 }
@@ -78,11 +80,13 @@ export class AuthService {
     id: string;
     email: string;
     fullName: string;
+    role?: Role;
   }): Promise<{ accessToken: string; refreshToken: string }> {
-    const basePayload = {
+    const basePayload: Omit<JwtPayload, 'jti' | 'type'> = {
       sub: user.id,
       email: user.email,
       fullName: user.fullName,
+      role: user.role ?? 'USER',
     };
 
     const accessPayload: JwtPayload = {

@@ -13,6 +13,7 @@ import type { CreateUserDTO } from './dto/create-user.dto';
 import { User } from 'generated/prisma/client';
 import type { UpdateUserDTO } from './dto/update-user-dto';
 import { AuthGuard } from 'src/common/guards/auth.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -25,6 +26,7 @@ export class UsersController {
 
   @Patch(':id')
   @UseGuards(AuthGuard)
+  @Roles('ADMIN')
   async update(
     @Param('id', ParseIntPipe) id: string,
     @Body() updateUserDto: UpdateUserDTO,
@@ -34,6 +36,7 @@ export class UsersController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
+  @Roles('ADMIN')
   async remove(@Param('id', ParseIntPipe) id: string) {
     return this.userService.remove(id);
   }
