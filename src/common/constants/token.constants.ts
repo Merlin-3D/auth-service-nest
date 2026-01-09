@@ -1,11 +1,10 @@
 import { SetMetadata } from '@nestjs/common';
 
-// TODO: déplace ces valeurs dans des variables d'environnement (.env)
 export const jwtConstants = {
   accessSecret: 'ACCESS_TOKEN_SECRET_CHANGE_ME',
   refreshSecret: 'REFRESH_TOKEN_SECRET_CHANGE_ME',
-  accessExpiresIn: '15m',
-  refreshExpiresIn: '7d',
+  accessExpiresInSeconds: 15 * 60,
+  refreshExpiresInSeconds: 7 * 24 * 60 * 60,
 };
 
 export const IS_PUBLIC_KEY = 'isPublic';

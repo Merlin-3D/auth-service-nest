@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { jwtConstants } from 'src/common/constants/token.constants';
 import { randomUUID } from 'crypto';
 import { Role } from 'src/common/decorators/roles.decorator';
+import { TokenBlacklistService } from 'src/infrastructure/redis/token-blacklist.service';
 
 interface JwtPayload {
   sub: string;
@@ -20,6 +21,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private tokenBlacklistService: TokenBlacklistService,
   ) {}
 
   async signIn(email: string, pass: string): Promise<{
@@ -61,12 +63,32 @@ export class AuthService {
       throw new UnauthorizedException('Invalid token type');
     }
 
+    // Vérifie si le refresh token a déjà été utilisé (rotation)
+    if (payload.jti) {
+      const blacklisted = await this.tokenBlacklistService.isBlacklisted(
+        payload.jti,
+        'refresh',
+      );
+      if (blacklisted) {
+        // Token déjà utilisé pour une rotation
+        throw new UnauthorizedException('Refresh token already used');
+      }
+    }
+
     const user = await this.usersService.findOne(payload.email);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    // NOTE: la vraie rotation se fera avec la blacklist/Redis (à implémenter plus tard)
+    // Blackliste l'ancien refresh token (rotation)
+    if (payload.jti) {
+      await this.tokenBlacklistService.blacklist(
+        payload.jti,
+        'refresh',
+        jwtConstants.refreshExpiresInSeconds,
+      );
+    }
+
     const { accessToken, refreshToken: newRefreshToken } =
       await this.generateTokenPair(user);
 
@@ -103,12 +125,12 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(accessPayload, {
       secret: jwtConstants.accessSecret,
-      expiresIn: jwtConstants.accessExpiresIn,
+      expiresIn: jwtConstants.accessExpiresInSeconds,
     });
 
     const refreshToken = await this.jwtService.signAsync(refreshPayload, {
       secret: jwtConstants.refreshSecret,
-      expiresIn: jwtConstants.refreshExpiresIn,
+      expiresIn: jwtConstants.refreshExpiresInSeconds,
     });
 
     return { accessToken, refreshToken };

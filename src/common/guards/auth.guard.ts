@@ -8,12 +8,14 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY, jwtConstants } from '../constants/token.constants';
+import { TokenBlacklistService } from 'src/infrastructure/redis/token-blacklist.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private reflector: Reflector,
+    private tokenBlacklistService: TokenBlacklistService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -31,9 +33,21 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
+      const payload = await this.jwtService.verifyAsync<any>(token, {
         secret: jwtConstants.accessSecret,
       });
+
+      // Vérifie si le jti de l'access token est blacklisté
+      if (payload?.jti) {
+        const blacklisted = await this.tokenBlacklistService.isBlacklisted(
+          payload.jti,
+          'access',
+        );
+        if (blacklisted) {
+          throw new UnauthorizedException();
+        }
+      }
+
       request['user'] = payload;
     } catch {
       throw new UnauthorizedException();
