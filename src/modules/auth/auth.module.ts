@@ -10,8 +10,8 @@ import { jwtConstants } from 'src/common/constants/token.constants';
     UsersModule,
     JwtModule.register({
       global: true,
-      secret: jwtConstants.secret,
-      signOptions: { expiresIn: '1h' },
+      secret: jwtConstants.accessSecret,
+      signOptions: { expiresIn: Number(jwtConstants.accessExpiresIn) },
     }),
   ],
 })
