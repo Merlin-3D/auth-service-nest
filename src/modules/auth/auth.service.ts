@@ -12,6 +12,7 @@ interface JwtPayload {
   email: string;
   fullName: string;
   role: Role;
+  tenantId: string;
   jti: string;
   type: 'access' | 'refresh';
 }
@@ -103,12 +104,14 @@ export class AuthService {
     email: string;
     fullName: string;
     role?: Role;
+    tenantId?: string | null;
   }): Promise<{ accessToken: string; refreshToken: string }> {
     const basePayload: Omit<JwtPayload, 'jti' | 'type'> = {
       sub: user.id,
       email: user.email,
       fullName: user.fullName,
       role: user.role ?? 'USER',
+      tenantId: user.tenantId ?? 'default',
     };
 
     const accessPayload: JwtPayload = {

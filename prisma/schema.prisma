@@ -13,9 +13,18 @@ datasource db {
   provider = "postgresql"
 }
 
+model Tenant {
+  id    String   @id @default(uuid())
+  name  String
+  users User[]
+}
+
 model User {
-  id    String     @default(uuid()) @id
-  email String  @unique
+  id        String  @id @default(uuid())
+  email     String  @unique
   fullName  String
-  password String
+  password  String
+  role      String  @default("USER")
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
 }

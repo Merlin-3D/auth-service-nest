@@ -5,6 +5,8 @@ export const createUserSchema = z
     email: z.string('Field is required.'),
     fullName: z.string('Field is required.'),
     password: z.string('Field is required.'),
+    tenantId: z.string('Field is required.'),
+    role: z.enum(['USER', 'ADMIN']).optional(),
   })
   .required();
 
